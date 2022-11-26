@@ -1,6 +1,6 @@
 #!/bin/bash
 
-version="v0.1.2"
+version="v0.1.2.1"
 
 CURRENT_DIR="$(pwd)"
 SCRIPTNAME="${0##*/}"
@@ -63,93 +63,15 @@ if [[ $repair == true ]]; then
 fi
 	error $LINENO "Filesystem recoveries failed. Giving up..."
 	exit 9
-
 }
 
 function set_autoexpand() {
-    #Make pi expand rootfs on next boot
+    #Make armbian expand filesystem on next boot
     mountdir=$(mktemp -d)
     partprobe "$loopback"
     mount "$loopback" "$mountdir"
-
-    if [ ! -d "$mountdir/etc" ]; then
-        info "/etc not found, autoexpand will not be enabled"
-        umount "$mountdir"
-        return
-    fi
-
-    if [[ -f "$mountdir/etc/rc.local" ]] && [[ "$(md5sum "$mountdir/etc/rc.local" | cut -d ' ' -f 1)" != "1c579c7d5b4292fd948399b6ece39009" ]]; then
-      echo "Creating new /etc/rc.local"
-    if [ -f "$mountdir/etc/rc.local" ]; then
-        mv "$mountdir/etc/rc.local" "$mountdir/etc/rc.local.bak"
-    fi
-
-    #####Do not touch the following lines#####
-cat <<\EOF1 > "$mountdir/etc/rc.local"
-#!/bin/bash
-do_expand_rootfs() {
-  ROOT_PART=$(mount | sed -n 's|^/dev/\(.*\) on / .*|\1|p')
-
-  PART_NUM=${ROOT_PART#mmcblk0p}
-  if [ "$PART_NUM" = "$ROOT_PART" ]; then
-    echo "$ROOT_PART is not an SD card. Don't know how to expand"
-    return 0
-  fi
-
-  # Get the starting offset of the root partition
-  PART_START=$(parted /dev/mmcblk0 -ms unit s p | grep "^${PART_NUM}" | cut -f 2 -d: | sed 's/[^0-9]//g')
-  [ "$PART_START" ] || return 1
-  # Return value will likely be error for fdisk as it fails to reload the
-  # partition table because the root fs is mounted
-  fdisk /dev/mmcblk0 <<EOF
-p
-d
-$PART_NUM
-n
-p
-$PART_NUM
-$PART_START
-
-p
-w
-EOF
-
-cat <<EOF > /etc/rc.local &&
-#!/bin/sh
-echo "Expanding /dev/$ROOT_PART"
-resize2fs /dev/$ROOT_PART
-rm -f /etc/rc.local; cp -f /etc/rc.local.bak /etc/rc.local; /etc/rc.local
-
-EOF
-reboot
-exit
-}
-raspi_config_expand() {
-/usr/bin/env raspi-config --expand-rootfs
-if [[ $? != 0 ]]; then
-  return -1
-else
-  rm -f /etc/rc.local; cp -f /etc/rc.local.bak /etc/rc.local; /etc/rc.local
-  reboot
-  exit
-fi
-}
-raspi_config_expand
-echo "WARNING: Using backup expand..."
-sleep 5
-do_expand_rootfs
-echo "ERROR: Expanding failed..."
-sleep 5
-if [[ -f /etc/rc.local.bak ]]; then
-  cp -f /etc/rc.local.bak /etc/rc.local
-  /etc/rc.local
-fi
-exit 0
-EOF1
-    #####End no touch zone#####
-    chmod +x "$mountdir/etc/rc.local"
-    fi
-    umount "$mountdir"
+    ln -sf /lib/systemd/system/armbian-resize-filesystem.service "${mountdir}/etc/systemd/system/basic.target.wants/armbian-resize-filesystem.service"
+    umount "$mountdir"    
 }
 
 help() {
@@ -305,7 +227,7 @@ logVariables $LINENO beforesize parted_output partnum partstart parttype tune2fs
 
 #Check if we should make pi expand rootfs on next boot
 if [ "$parttype" == "logical" ]; then
-  echo "WARNING: PiShrink does not yet support autoexpanding of this type of image"
+  echo "WARNING: ArmbianShrink does not yet support autoexpanding of this type of image"
 elif [ "$should_skip_autoexpand" = false ]; then
   set_autoexpand
 else
