@@ -1,7 +1,7 @@
 
-# PiShrink #
+# ArmbianShrink #
 
-PiShrink is a bash script that automatically shrink a pi image that will then resize to the max size of the SD card on boot. This will make putting the image back onto the SD card faster and the shrunk images will compress better.
+ArmbianShrink is a bash script that automatically shrink an Armbian image that will then resize to the max size of the SD card on boot. This will make putting the image back onto the SD card faster and the shrunk images will compress better.
 In addition the shrunk image can be compressed with gzip and xz to create an even smaller image. Parallel compression of the image
 using multiple cores is supported.
 
@@ -34,7 +34,7 @@ Default options for compressors can be overwritten by defining PISHRINK_GZIP or 
 
 ## Prerequisites ##
 
-If you are running PiShrink in VirtualBox you will likely encounter an error if you
+If you are running ArmbianShrink in VirtualBox you will likely encounter an error if you
 attempt to use VirtualBox's "Shared Folder" feature. You can copy the image you wish to
 shrink on to the VM from a Shared Folder, but shrinking directctly from the Shared Folder
 is know to cause issues.
@@ -44,15 +44,15 @@ If using Ubuntu, you will likely see an error about `e2fsck` being out of date a
 ## Installation ##
 
 ```bash
-wget https://raw.githubusercontent.com/Drewsif/PiShrink/master/pishrink.sh
-chmod +x pishrink.sh
-sudo mv pishrink.sh /usr/local/bin
+wget https://raw.githubusercontent.com/lededev/ArmbianShrink/master/armbianshrink.sh
+chmod +x armbianshrink.sh
+sudo mv armbianshrink.sh /usr/local/bin
 ```
 
 ## Example ##
 
 ```bash
-[user@localhost PiShrink]$ sudo pishrink.sh pi.img
+[user@localhost ArmbianShrink]$ sudo armbianshrink.sh ab.img
 e2fsck 1.42.9 (28-Dec-2013)
 Pass 1: Checking inodes, blocks, and sizes
 Pass 2: Checking directory structure
@@ -71,7 +71,7 @@ Begin pass 4 (max = 7348)
 Updating inode references     XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 The filesystem on /dev/loop1 is now 773603 blocks long.
 
-Shrunk pi.img from 30G to 3.1G
+Shrunk ab.img from 30G to 3.1G
 ```
 
 ## Contributing ##
